@@ -1,0 +1,10 @@
+# DINO-R50 window detector: 512-px windows at native resolution (window mode).
+executor: dino
+config: script/detectors/dino/dino_r50_window512.py
+weights: weights/dino_r50_window512.pth
+resize: [512, 512]
+pad: [512, 512]
+score_thr: 0.01
+max_det: 80        # per window; 200 for dense scenes (PANDA)
+batch: 16
+device: cuda:0

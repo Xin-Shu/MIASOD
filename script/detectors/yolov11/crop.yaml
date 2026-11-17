@@ -1,0 +1,9 @@
+# Crop detector of crop mode: the coarse-pass weights on the crops, each resized to a longer side of 1,024 px.
+executor: yolov11
+weights: weights/yolov11l_coarse1024.pt
+imgsz: 1024
+conf: 0.001
+max_det: 300
+half: false
+batch: 4
+device: 0

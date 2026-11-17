@@ -1,0 +1,118 @@
+{
+ "_doc": "Five-fold cross-validation over clips. 'folds' lists the test clips of each fold; every model of fold k is trained on all other clips of the dataset, including 'train_only', except the clips in 'exclude_from_training'[k] (same source recording as a test clip).",
+ "omnismall": {
+  "folds": [
+   [
+    "bbc_earth",
+    "qoocam_field"
+   ],
+   [
+    "Q360_20250912_121426",
+    "R0010116",
+    "football_pitch"
+   ],
+   [
+    "Q360_20250912_120202_full",
+    "cricket_pitch",
+    "qoocam_avoca230723"
+   ],
+   [
+    "R0010117",
+    "calicut_1",
+    "thetax_avoca230723"
+   ],
+   [
+    "clontarf",
+    "dunlaoghaire_dock_1",
+    "qoocam_patio"
+   ]
+  ],
+  "train_only": [],
+  "exclude_from_training": {},
+  "max_det": 300
+ },
+ "panda": {
+  "folds": [
+   [
+    "primary_school_04"
+   ],
+   [
+    "oct_habour_02"
+   ],
+   [
+    "university_canteen_01",
+    "xili_street_1_08"
+   ],
+   [
+    "basketball_court_05",
+    "xinzhongguan_06"
+   ],
+   [
+    "university_campus_07",
+    "xili_crossroad_03"
+   ]
+  ],
+  "train_only": [
+   "huaqiangbei_10",
+   "xili_street_2_09"
+  ],
+  "exclude_from_training": {},
+  "max_det": 2000
+ },
+ "seadronessee": {
+  "folds": [
+   [
+    "dji_0001_30",
+    "dji_0001_31",
+    "dji_0001_33",
+    "dji_0001_34",
+    "dji_0001_35",
+    "dji_0001_36",
+    "dji_0001_46",
+    "dji_0003_43",
+    "dji_0003_44",
+    "dji_0064_26"
+   ],
+   [
+    "dji_0038_24",
+    "dji_0039_04",
+    "dji_0041_23",
+    "dji_0069_22"
+   ],
+   [
+    "dji_0011_d3_42",
+    "dji_0032_09",
+    "dji_0032_10",
+    "dji_0032_11",
+    "dji_0032_12",
+    "dji_0032_13",
+    "dji_0032_14",
+    "dji_0057_01",
+    "dji_0057_02",
+    "dji_0065_08"
+   ],
+   [
+    "dji_0001_d3_41",
+    "dji_0010_d3_27",
+    "dji_0055_03",
+    "dji_0063_06",
+    "dji_0063_07"
+   ],
+   [
+    "dji_0006_d3_40",
+    "dji_0050_20",
+    "dji_0059_25",
+    "dji_0062_21"
+   ]
+  ],
+  "train_only": [
+   "dji_0001_29"
+  ],
+  "exclude_from_training": {
+   "1": [
+    "dji_0001_29"
+   ]
+  },
+  "max_det": 300
+ }
+}

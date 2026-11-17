@@ -1,0 +1,137 @@
+--- a/libavcodec/h264_slice.c
++++ b/libavcodec/h264_slice.c
+@@ -2680,6 +2680,8 @@
+     }
+ }
+ 
++#include "mia_bc_store.h"
++
+ static int decode_slice(struct AVCodecContext *avctx, void *arg)
+ {
+     H264SliceContext *sl = arg;
+@@ -2688,12 +2690,26 @@
+     int orig_deblock = sl->deblocking_filter;
+     int ret;
+ 
++    MiaBCStore *bc = avctx->opaque;
++    uint32_t *bc_values = NULL;
++    int bc_n = 0, bc_first = sl->mb_y * h->mb_width + sl->mb_x;
++    int bc_id = h->cur_pic_ptr->f->coded_picture_number;
++    const uint8_t *bc_prev = NULL;
++    if (bc) {
++        if (FIELD_OR_MBAFF_PICTURE(h) || h->ps.sps->bit_depth_luma != 8 ||
++            h->ps.sps->chroma_format_idc != 1 || !h->ps.pps->cabac ||
++            (sl->slice_type_nos != AV_PICTURE_TYPE_I && sl->slice_type_nos != AV_PICTURE_TYPE_P))
++            return mia_bc_fail(bc, "requires progressive 8-bit 4:2:0 CABAC I/P slices");
++        bc_values = av_malloc_array(h->mb_num, sizeof(*bc_values));
++        if (!bc_values) return mia_bc_fail(bc, "slice allocation failed");
++    }
++
+     sl->linesize   = h->cur_pic_ptr->f->linesize[0];
+     sl->uvlinesize = h->cur_pic_ptr->f->linesize[1];
+ 
+     ret = alloc_scratch_buffers(sl, sl->linesize);
+     if (ret < 0)
+-        return ret;
++        { av_free(bc_values); return ret; }
+ 
+     sl->mb_skip_run = -1;
+ 
+@@ -2724,10 +2740,11 @@
+                               sl->gb.buffer + get_bits_count(&sl->gb) / 8,
+                               (get_bits_left(&sl->gb) + 7) / 8);
+         if (ret < 0)
+-            return ret;
++            { av_free(bc_values); return ret; }
+ 
+         ff_h264_init_cabac_states(h, sl);
+ 
++        bc_prev = sl->cabac.bytestream;
+         for (;;) {
+             int ret, eos;
+             if (sl->mb_x + sl->mb_y * h->mb_width >= sl->next_slice_idx) {
+@@ -2735,7 +2752,7 @@
+                        sl->next_slice_idx);
+                 er_add_slice(sl, sl->resync_mb_x, sl->resync_mb_y, sl->mb_x,
+                              sl->mb_y, ER_MB_ERROR);
+-                return AVERROR_INVALIDDATA;
++                { av_free(bc_values); return AVERROR_INVALIDDATA; }
+             }
+ 
+             ret = ff_h264_decode_mb_cabac(h, sl);
+@@ -2753,6 +2770,17 @@
+                     ff_h264_hl_decode_mb(h, sl);
+                 sl->mb_y--;
+             }
++            if (bc) {
++                int xy = sl->mb_y * h->mb_width + sl->mb_x;
++                ptrdiff_t bytes = sl->cabac.bytestream - bc_prev;
++                bc_prev = sl->cabac.bytestream;
++                if (ret < 0 || xy != bc_first + bc_n || bc_n >= h->mb_num || bytes < 0 || bytes > UINT32_MAX / 8) {
++                    mia_bc_fail(bc, "invalid or noncontiguous macroblock stream");
++                    { av_free(bc_values); return AVERROR_INVALIDDATA; }
++                }
++                /* Bit cost of this macroblock: CABAC read-pointer advance, sampled before its termination bin. */
++                bc_values[bc_n++] = (uint32_t)bytes * 8;
++            }
+             eos = get_cabac_terminate(&sl->cabac);
+ 
+             if ((h->workaround_bugs & FF_BUG_TRUNCATED) &&
+@@ -2772,7 +2800,7 @@
+                        sl->cabac.bytestream_end - sl->cabac.bytestream);
+                 er_add_slice(sl, sl->resync_mb_x, sl->resync_mb_y, sl->mb_x,
+                              sl->mb_y, ER_MB_ERROR);
+-                return AVERROR_INVALIDDATA;
++                { av_free(bc_values); return AVERROR_INVALIDDATA; }
+             }
+ 
+             if (++sl->mb_x >= h->mb_width) {
+@@ -2806,7 +2834,7 @@
+                        sl->next_slice_idx);
+                 er_add_slice(sl, sl->resync_mb_x, sl->resync_mb_y, sl->mb_x,
+                              sl->mb_y, ER_MB_ERROR);
+-                return AVERROR_INVALIDDATA;
++                { av_free(bc_values); return AVERROR_INVALIDDATA; }
+             }
+ 
+             ret = ff_h264_decode_mb_cavlc(h, sl);
+@@ -2829,7 +2857,7 @@
+                        "error while decoding MB %d %d\n", sl->mb_x, sl->mb_y);
+                 er_add_slice(sl, sl->resync_mb_x, sl->resync_mb_y, sl->mb_x,
+                              sl->mb_y, ER_MB_ERROR);
+-                return ret;
++                { av_free(bc_values); return ret; }
+             }
+ 
+             if (++sl->mb_x >= h->mb_width) {
+@@ -2856,7 +2884,7 @@
+                         er_add_slice(sl, sl->resync_mb_x, sl->resync_mb_y,
+                                      sl->mb_x, sl->mb_y, ER_MB_END);
+ 
+-                        return AVERROR_INVALIDDATA;
++                        { av_free(bc_values); return AVERROR_INVALIDDATA; }
+                     }
+                 }
+             }
+@@ -2876,7 +2904,7 @@
+                     er_add_slice(sl, sl->resync_mb_x, sl->resync_mb_y, sl->mb_x,
+                                  sl->mb_y, ER_MB_ERROR);
+ 
+-                    return AVERROR_INVALIDDATA;
++                    { av_free(bc_values); return AVERROR_INVALIDDATA; }
+                 }
+             }
+         }
+@@ -2884,7 +2912,11 @@
+ 
+ finish:
+     sl->deblocking_filter = orig_deblock;
+-    return 0;
++    ret = 0;
++    if (bc) ret = avpriv_mia_bc_commit(bc, bc_id, sl->slice_type_nos, h->mb_width, h->mb_height,
++                                     bc_first, bc_n, bc_values);
++    av_free(bc_values);
++    return ret;
+ }
+ 
+ /**

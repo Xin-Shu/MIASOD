@@ -1,0 +1,12 @@
+# Core (tested: Python 3.9, numpy 2.0.2, scipy 1.13.1, opencv-python 4.12.0, torch 2.8.0, ultralytics 8.3.176)
+numpy>=1.23
+scipy>=1.9
+opencv-python>=4.7
+pyyaml>=6.0
+torch>=2.0
+ultralytics>=8.3
+pycocotools>=2.0.6
+
+# Optional
+# av>=10            pixel-only decoding without the bit-cost library (runs without the BC cue)
+# mmdet==3.3.0      DINO-R50 detectors (with mmengine>=0.10 and mmcv>=2.0,<2.2; tested with torch 2.1)

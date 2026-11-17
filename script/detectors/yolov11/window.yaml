@@ -1,0 +1,9 @@
+# YOLOv11-L window detector: 512-px windows at native resolution (window mode).
+executor: yolov11
+weights: weights/yolov11l_window512.pt
+imgsz: 512
+conf: 0.01
+max_det: 80        # per window; 200 for dense scenes (PANDA)
+half: false
+batch: 32
+device: 0

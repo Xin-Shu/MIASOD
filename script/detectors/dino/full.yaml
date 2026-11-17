@@ -1,0 +1,9 @@
+# DINO-R50 whole-frame pass (longer side 1,024 px). Its boxes replace the coarse-pass boxes in the merge
+# (miasod.py --global-detector); the YOLOv11-L coarse pass still provides the coarse cue.
+executor: dino
+config: script/detectors/dino/dino_r50_full1024.py
+weights: weights/dino_r50_full1024.pth
+score_thr: 0.001
+max_det: 300
+batch: 1
+device: cuda:0
