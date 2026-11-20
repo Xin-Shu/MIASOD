@@ -130,8 +130,8 @@ class Pipeline:
         self.a = a
         gated = a.keep < 1.0
         self.use = {c: (c in a.cues and gated) for c in CUES}
-        # The coarse pass also feeds the merge, so it runs for exhaustive windows too when it is a chosen cue.
-        self.use["coarse"] = "coarse" in a.cues
+        # The coarse pass also feeds the merge, so it runs for exhaustive windows too, unless a global detector replaces it.
+        self.use["coarse"] = "coarse" in a.cues and (gated or not a.global_detector)
         role = "window" if a.mode == "window" else "crop"
         try:
             self.coarse = Detector(a.coarse_detector, **detector_overrides(a, "coarse")) if self.use["coarse"] else None

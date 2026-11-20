@@ -8,7 +8,7 @@ AP25_small, in percent. Detections of all clips are pooled into one evaluation (
                               --pair runs/clipB/detections.txt data/clipB/gt/gt.txt --max-det 300
 
 The evaluated frames of a clip are those that hold ground truth or detections (frames with neither change no AP);
---frames A:B restricts every clip to frames A..B. Ground-truth rows whose seventh column is 0 are ignored.
+--frames A:B restricts every clip to frames A..B. Every ground-truth row counts, whatever its seventh (consider) column.
 """
 import argparse
 import contextlib
@@ -31,7 +31,7 @@ def build(pairs, frames=None):
     for c, pair in enumerate(pairs):
         det_path, gt_path = pair[:2]
         last = pair[2] if len(pair) > 2 else None          # optional: only frames 1..last were processed
-        gt = read_mot_boxes(gt_path, drop_invalid=True)
+        gt = read_mot_boxes(gt_path, drop_invalid=False)
         dt = read_mot_boxes(det_path, drop_invalid=False)
         keys = sorted(set(gt) | set(dt))
         if frames:

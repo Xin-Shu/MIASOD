@@ -3,9 +3,10 @@ __pycache__/
 *.egg-info/
 .ipynb_checkpoints/
 
-# local builds, data and results
+# local builds, data, results and tests
 script/bitcost/build/
 weights/
 data/
 runs/
 work_dirs/
+test/

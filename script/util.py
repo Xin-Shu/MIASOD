@@ -137,14 +137,18 @@ def soft_nms(boxes_xywh, scores, sigma=0.5, floor=0.001):
 
 
 def merge_soft_nms(boxes, scores, sigma=0.5, floor=0.001, max_det=300):
-    """Soft-NMS over the union of all boxes, then the `max_det` highest decayed scores."""
-    boxes = np.asarray(boxes, np.float32).reshape(-1, 4)
-    scores = np.asarray(scores, np.float32).reshape(-1)
+    """Soft-NMS over the union of all boxes, then the `max_det` highest decayed scores (float32 output).
+
+    The boxes keep the precision they arrive in (window mode float32, crop mode float64, as in the paper's runs): when
+    the cap binds, the rounding of the coordinates decides which near-equal boxes survive.
+    """
+    boxes = np.asarray(boxes).reshape(-1, 4)
+    scores = np.asarray(scores).reshape(-1)
     if not len(boxes):
-        return boxes, scores
+        return boxes.astype(np.float32), scores.astype(np.float32)
     keep, decayed = soft_nms(boxes, scores, sigma, floor)
     order = np.argsort(-decayed, kind="stable")[:max_det]
-    return boxes[keep][order], decayed[order].astype(np.float32)
+    return boxes[keep][order].astype(np.float32), decayed[order].astype(np.float32)
 
 
 # ---------------------------------------------------------------------------------------------------------------------

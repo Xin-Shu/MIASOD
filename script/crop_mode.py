@@ -77,14 +77,15 @@ class CropMode:
         B, S = [], []
         for (l, t, _, _), (b, s) in zip(crops, self.detector(images)):
             if len(b):
-                B.append(b + np.array([l, t, 0, 0], np.float32))
+                B.append(b.astype(np.float64) + np.array([l, t, 0, 0], np.float64))
                 S.append(s)
         if not B:
-            return np.zeros((0, 4), np.float32), np.zeros(0, np.float32)
-        return np.concatenate(B).astype(np.float32), np.concatenate(S).astype(np.float32)
+            return np.zeros((0, 4), np.float64), np.zeros(0, np.float64)
+        return np.concatenate(B), np.concatenate(S).astype(np.float64)
 
     def merge(self, boxes, scores, global_boxes, global_scores):
         g = np.asarray(global_scores) >= self.merge_conf
-        boxes = np.concatenate([np.asarray(global_boxes, np.float32).reshape(-1, 4)[g], boxes])
-        scores = np.concatenate([np.asarray(global_scores, np.float32)[g], scores])
+        # float64 throughout, as the paper's crop-mode merge
+        boxes = np.concatenate([np.asarray(global_boxes, np.float64).reshape(-1, 4)[g], boxes])
+        scores = np.concatenate([np.asarray(global_scores, np.float64)[g], scores])
         return merge_soft_nms(boxes, scores, self.sigma, self.floor, self.max_det)
